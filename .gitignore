@@ -5,3 +5,5 @@ dist/
 coverage/
 .vscode/
 .env
+api-key.txt
+config.js

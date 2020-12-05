@@ -10,5 +10,8 @@
   "license": "ISC",
   "devDependencies": {
     "prettier": "^2.1.2"
+  },
+  "dependencies": {
+    "leaflet": "^1.7.1"
   }
 }

@@ -1,0 +1,74 @@
+body {
+	color: peachpuff;
+	background-color: #0f0250;
+	text-shadow: 0.1em 0.1em 0 rgba(0, 0, 0, 0.25);
+	font-size: 16px;
+	/* TODO: Add a full-screen background image to make this prettier */
+}
+
+p {
+	color: #333333;
+}
+
+li {
+	list-style-type: none;
+}
+
+#weather-button {
+	border: none;
+	margin: 0 auto;
+}
+
+#searched-city-results {
+	border: none;
+	padding: 0 10px;
+	margin: 0 auto;
+}
+
+#weather-container {
+	/* TODO: Consider removing display: flex if you want the components to be on top of each other */
+	/* display: flex;
+	flex-wrap: wrap; */
+	align-items: center;
+	justify-content: center;
+	border: none;
+	padding: 0 10px;
+	margin: 0 auto;
+	/* TODO: Background with opacity to cover the image */
+}
+
+.current-weather-image {
+	padding: 20px;
+}
+
+.current-weather-container {
+	background-color: #bbbbff;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	margin: 20px;
+	width: 20%;
+}
+
+#map {
+	height: 180px;
+}
+
+.forecast-container {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.forecast-line {
+	margin: 2rem;
+	padding: 1rem;
+	background-color: white;
+}
+
+.forecast-day {
+	background-color: #bbbbff;
+	margin: 0 auto;
+	border: 5px yellow;
+	border-style: solid;
+}

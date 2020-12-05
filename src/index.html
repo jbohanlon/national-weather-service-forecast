@@ -3,21 +3,49 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>National Weather Service Forecast</title>
-		<script type="text/javascript" src="./weather.js"></script>
+		<title>Weather App</title>
+		<link
+			href="libs/bootstrap-4.5.3-dist/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<link href="../node_modules/leaflet/dist/leaflet.css" rel="stylesheet" />
+		<link href="css/main.css" rel="stylesheet" />
 	</head>
 	<body>
+		<!-- Flex Grid -->
 		<div id="weather-container">
-			<input type="text" id="lat-input" placeholder="Latitude" size="10" />
-			<input type="text" id="lon-input" placeholder="Longitude" size="10" />
-			<br />
-			<br />
-			<button id="forecast-button" onclick="generateForecast()">
-				Generate forecast
-			</button>
-			<br />
-			<br />
-			<div id="weather-data"></div>
+			<section id="form-container">
+				<h1>Weather App</h1>
+				<div id="search-error" class="alert alert-danger d-none"></div>
+				<form id="weather-form" class="form-inline">
+					<input
+						type="text"
+						id="city-input"
+						class="form-control"
+						placeholder="Enter city"
+						size="16"
+						autofocus
+					/>
+					<button type="submit" id="weather-button" class="btn btn-primary">
+						Get weather
+					</button>
+				</form>
+			</section>
+			<section id="searched-city-results">
+				<div id="searched-city-current-conditions"></div>
+				<div id="searched-city-forecast"></div>
+			</section>
 		</div>
+		<!-- <script
+			type="text/javascript"
+			src="libs/bootstrap-4.5.3-dist/js/bootstrap.min.js"
+		></script> -->
+		<!-- Table Area -->
+		<script
+			type="text/javascript"
+			src="../node_modules/leaflet/dist/leaflet.js"
+		></script>
+		<script type="text/javascript" src="js/config.js"></script>
+		<script type="text/javascript" src="js/owm-weather.js"></script>
 	</body>
 </html>
