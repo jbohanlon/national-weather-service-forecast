@@ -11,13 +11,13 @@ async function getWeather() {
 			? "New York"
 			: document.getElementById("city-input").value;
 
-	const [lat, lon] = await getCurrentConditions(city, Config.apiKey);
+	const [lat, lon] = await getCurrentConditions(city, Config.openWeatherMapKey);
 	console.log(lat, lon);
 
 	// Don't try to get a forecast if you encountered error lat lon values
 	if (lat !== undefined && lon !== undefined) {
 		hideSearchError();
-		getForecast(lat, lon, Config.apiKey);
+		getForecast(lat, lon, Config.openWeatherMapKey);
 	} else {
 		showSearchError(`Couldn't find ${escapeHtml(city)}`);
 	}
@@ -62,18 +62,28 @@ async function getCurrentConditions(city, apiKey) {
 		return [undefined, undefined];
 	}
 
-	console.log(currentWeather);
+	// console.log(currentWeather);
 
 	const currentWeatherData = await currentWeather.json();
 	console.log(currentWeatherData);
 
 	writeCurrentConditions(
-		document.getElementById("searched-city-current-conditions"),
+		document.getElementById("current-weather-container"),
 		currentWeatherData
 	);
 
-	// TODO: Write addMap() and call it like this:
-	// addMap(targetDiv, currentWeatherData.coord.lat, currentWeatherData.coord.lon);
+	createMap(
+		document.getElementById("windy"),
+		currentWeatherData.coord.lat,
+		currentWeatherData.coord.lon,
+		city
+	);
+
+	// Unhide current-weather-container and windy at the same time so load times don't create inconsistent heights or jumpy content
+	document
+		.getElementById("current-weather-container")
+		.classList.remove("d-none");
+	document.getElementById("windy").classList.remove("d-none");
 
 	return [currentWeatherData.coord.lat, currentWeatherData.coord.lon];
 }
@@ -83,31 +93,26 @@ function writeCurrentConditions(targetDiv, data) {
 	// Clear targetDiv's contents to avoid stacking weather data output
 	targetDiv.innerHTML = "";
 
-	// Add a new div that holds the requested location's current weather data
-	const currentWeatherDiv = document.createElement("div");
-	currentWeatherDiv.setAttribute("class", "current-weather-container");
-
 	// Add a relevant image
-	currentWeatherDiv.insertAdjacentHTML(
+	targetDiv.insertAdjacentHTML(
 		"beforeend",
 		getWeatherImage(data.weather[0].icon, data.weather[0].main)
 	);
 
 	// Add corresponding text data
-	currentWeatherDiv.insertAdjacentHTML(
+	targetDiv.insertAdjacentHTML(
 		"beforeend",
-		`<p class="text-center w-100">Right now in ${data.name}, ${
+		`<p class="text-center w-50">Right now in ${data.name}, ${
 			data.sys.country
-		} it's ${kelvinToFahrenheitRounded(data.main.temp)}&deg;F</p>`
+		} it's ${kelvinToFahrenheitRounded(
+			data.main.temp
+		)} and feels like ${kelvinToFahrenheitRounded(data.main.feels_like)}</p>`
 	);
-
-	// Put all of your additions into the div
-	targetDiv.appendChild(currentWeatherDiv);
 }
 
-// Convert Kelvin temperatures from OpenWeatherMap to rounded Fahrenheit
+// Return a rounded Fahrenheit temperature string when given a Kelvin temperature
 function kelvinToFahrenheitRounded(temp) {
-	return Math.round((temp - 273.15) * 1.8 + 32);
+	return Math.round((temp - 273.15) * 1.8 + 32) + "&deg;F";
 }
 
 // Return an image corresponding to given weather conditions
@@ -123,6 +128,35 @@ function getWeatherImage(icon, description) {
 	}" alt="${description}"/>`;
 }
 
+// Create a map corresponding to current weather conditions
+function createMap(targetDiv, latitude, longitude, placeName) {
+	// Clear targetDiv's contents to avoid stacking maps
+	targetDiv.innerHTML = "";
+
+	// Set map's height to equal its container.
+	// Leaflet maps must have a defined height so this is here to guarantee that.
+	document.getElementById("windy").setAttribute("height", "100%");
+
+	// Parameters to pass to Windy -- it's most efficient to pass as many as possible at the beginning
+	const options = {
+		key: Config.windyKey,
+		lat: latitude,
+		lon: longitude,
+		zoom: 7,
+	};
+
+	// Initialize the Windy API
+	windyInit(options, (windyAPI) => {
+		const { map } = windyAPI;
+
+		// Put a marker with the searched place name on the map
+		L.popup()
+			.setLatLng([latitude, longitude])
+			.setContent(capitalizeWords(placeName))
+			.openOn(map);
+	});
+}
+
 // Return 5-day forecast data for given latitude and longitude coordinates.
 // Also includes weather alerts for the given area if applicable.
 async function getForecast(lat, lon, apiKey) {
@@ -130,7 +164,7 @@ async function getForecast(lat, lon, apiKey) {
 		`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${apiKey}`
 	);
 
-	console.log(forecast);
+	// console.log(forecast);
 
 	const forecastData = await forecast.json();
 	console.log(forecastData);
@@ -141,7 +175,7 @@ async function getForecast(lat, lon, apiKey) {
 	);
 }
 
-// Write forecast to HTML
+// Write forecast HTML
 function writeForecast(targetDiv, data) {
 	// Clear targetDiv's contents to avoid stacking weather forecast output
 	targetDiv.innerHTML = "";
@@ -184,6 +218,8 @@ function writeForecast(targetDiv, data) {
 	// Write the forecast HTML to the page
 	forecastDiv.appendChild(forecastList);
 	targetDiv.appendChild(forecastDiv);
+
+	writeWeatherWarnings(data);
 }
 
 // Returns a day string based on a given date in seconds.
@@ -211,7 +247,65 @@ function capitalizeFirstLetter(str) {
 	return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// TODO: Maybe add a map using a request like this: https://openweathermap.org/api/weathermaps
+// Return a string with the first letter of each word capitalized
+function capitalizeWords(str) {
+	const split = str.split(" ");
+	const capitalized = [];
+
+	for (const word of split) {
+		capitalized.push(capitalizeFirstLetter(word));
+	}
+
+	return capitalized.join(" ");
+}
+
+// Write weather warnings, or hide the containing element if none exist
+function writeWeatherWarnings(data) {
+	// Reset existing warning data
+	const warnings = document.getElementById("warnings");
+	warnings.innerHTML = "<h2>Weather Warnings</h2>";
+
+	// Write each weather alert
+	if (data.hasOwnProperty("alerts")) {
+		// Unhide warnings
+		warnings.classList.remove("d-none");
+
+		for (let i = 0; i < data.alerts.length; i++) {
+			warnings.insertAdjacentHTML(
+				"beforeend",
+				`<div>${formatWeatherWarning(data.alerts[i].description)}</div>`
+			);
+		}
+	} else {
+		// Hide warnings
+		warnings.classList.add("d-none");
+	}
+}
+
+// Return weather warning with line breaks and nicer formatting
+function formatWeatherWarning(text) {
+	const split = text.split("*");
+	const warnings = [];
+
+	for (let i = 0; i < split.length; i++) {
+		let sentence = split[i];
+
+		// Format warning headline and text
+		if (i == 0) {
+			sentence = sentence.replace(/\.\.\./g, "");
+			warnings.push(
+				`<p class="weather-warning-headline">${sentence.trim()}</p>`
+			);
+		} else {
+			sentence = sentence.replace("...", " &mdash; ");
+			warnings.push(
+				`<p class="weather-warning-text">&bull;${sentence.trim()}</p>`
+			);
+		}
+	}
+
+	return warnings.join("");
+}
 
 // TODO: See if you can get historical data through the NWS API
 

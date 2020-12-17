@@ -1,3 +1,5 @@
+/* Global styles */
+
 body {
 	color: peachpuff;
 	background-color: #0f0250;
@@ -14,49 +16,77 @@ li {
 	list-style-type: none;
 }
 
+/* Utility classes */
+
+.flex-parent {
+	display: flex;
+}
+
+.flex-child {
+	flex: 1;
+	margin: 1rem;
+}
+
+.capitalize {
+	text-transform: capitalize;
+}
+
+/* User interface */
+
 #weather-button {
 	border: none;
 	margin: 0 auto;
 }
 
+/* Weather data */
+
+#weather-container {
+	align-items: center;
+	justify-content: center;
+	border: none;
+	padding: 0 10px;
+	margin: 0 auto;
+	/* TODO: Add a semi-transparent background to cover the image */
+}
+
+/* TODO: Probably remove */
 #searched-city-results {
 	border: none;
 	padding: 0 10px;
 	margin: 0 auto;
 }
 
-#weather-container {
-	/* TODO: Consider removing display: flex if you want the components to be on top of each other */
-	/* display: flex;
-	flex-wrap: wrap; */
-	align-items: center;
-	justify-content: center;
-	border: none;
-	padding: 0 10px;
-	margin: 0 auto;
-	/* TODO: Background with opacity to cover the image */
-}
+/* Current weather conditions */
 
 .current-weather-image {
 	padding: 20px;
 }
 
-.current-weather-container {
+#searched-city-current-conditions {
+	/* TODO: Change this to relative sizing later */
+	height: 500px;
+	margin-bottom: 2rem;
+}
+
+#current-weather-container {
 	background-color: #bbbbff;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	margin: 20px;
-	width: 20%;
 }
 
-#map {
-	height: 180px;
+/* Weather map */
+
+#windy {
+	height: 100%;
 }
+
+/* Weather forecast */
 
 .forecast-container {
 	display: flex;
-	flex-wrap: wrap;
+	flex-direction: column;
 	align-items: center;
 }
 
@@ -71,4 +101,25 @@ li {
 	margin: 0 auto;
 	border: 5px yellow;
 	border-style: solid;
+}
+
+/* Weather warnings */
+#warnings {
+	margin: 0.5rem 0rem;
+	background-color: #dddddd;
+	font-weight: 900;
+	color: red;
+}
+
+.weather-warning-headline {
+	padding-top: 0.5rem;
+	font-weight: 900;
+	color: red;
+	margin: 0px;
+}
+
+.weather-warning-text {
+	font-weight: 600;
+	color: red;
+	margin: 0px;
 }
