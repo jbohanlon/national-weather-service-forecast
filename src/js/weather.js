@@ -102,9 +102,9 @@ function writeCurrentConditions(targetDiv, data) {
 	// Add corresponding text data
 	targetDiv.insertAdjacentHTML(
 		"beforeend",
-		`<p class="text-center w-50">Right now in ${data.name}, ${
-			data.sys.country
-		} it's ${kelvinToFahrenheitRounded(
+		`<p class="text-center w-50">Right now in ${
+			data.name
+		}, it's ${kelvinToFahrenheitRounded(
 			data.main.temp
 		)} and feels like ${kelvinToFahrenheitRounded(data.main.feels_like)}</p>`
 	);
@@ -157,26 +157,106 @@ function createMap(targetDiv, latitude, longitude, placeName) {
 	});
 }
 
+// // Return 5-day forecast data for given latitude and longitude coordinates.
+// // Also includes weather alerts for the given area if applicable.
+// async function getForecast(lat, lon, apiKey) {
+// 	const forecast = await fetch(
+// 		`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${apiKey}`
+// 	);
+
+// 	// console.log(forecast);
+
+// 	const forecastData = await forecast.json();
+// 	console.log(forecastData);
+
+// 	writeForecast(
+// 		document.getElementById("searched-city-forecast"),
+// 		forecastData
+// 	);
+// }
+
 // Return 5-day forecast data for given latitude and longitude coordinates.
 // Also includes weather alerts for the given area if applicable.
 async function getForecast(lat, lon, apiKey) {
-	const forecast = await fetch(
+	const owmForecast = await fetch(
 		`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${apiKey}`
 	);
 
-	// console.log(forecast);
+	const owmForecastData = await owmForecast.json();
+	console.log(owmForecastData);
 
-	const forecastData = await forecast.json();
-	console.log(forecastData);
+	const nwsForecastData = await getNWSForecastData(lat, lon);
+
+	console.log(nwsForecastData);
 
 	writeForecast(
 		document.getElementById("searched-city-forecast"),
-		forecastData
+		nwsForecastData,
+		owmForecastData
 	);
 }
 
+// Takes a latitude/longitude pair and returns forecast data for the current week
+async function getNWSForecastData(lat, lon) {
+	const coordinateRequest = await fetch(
+		`https://api.weather.gov/points/${lat},${lon}`
+	);
+	const coordinateData = await coordinateRequest.json();
+
+	const response = await fetch(coordinateData.properties.forecast);
+	const responseData = await response.json();
+	return responseData;
+}
+
+// // Write forecast HTML
+// function writeForecast(targetDiv, data) {
+// 	// Clear targetDiv's contents to avoid stacking weather forecast output
+// 	targetDiv.innerHTML = "";
+
+// 	// Add a new div that holds the requested location's forecast data
+// 	const forecastDiv = document.createElement("div");
+// 	forecastDiv.setAttribute("class", "forecast-container");
+
+// 	// Create a list to hold each day's forecast data and corresponding images
+// 	const forecastList = document.createElement("ul");
+// 	forecastDiv.appendChild(forecastList);
+
+// 	// Add a li for each day of forecast data
+// 	for (
+// 		let forecastIndex = 0;
+// 		forecastIndex < data.daily.length;
+// 		forecastIndex++
+// 	) {
+// 		let day = document.createElement("li");
+
+// 		day.setAttribute("class", "forecast-day");
+
+// 		day.innerHTML = `${getWeatherImage(
+// 			data.daily[forecastIndex].weather[0].icon,
+// 			capitalizeFirstLetter(data.daily[forecastIndex].weather[0].description)
+// 		)}<p class="forecast-line text-center">${secondsToDayString(
+// 			data.daily[forecastIndex].dt,
+// 			forecastIndex
+// 		)}: ${capitalizeFirstLetter(
+// 			data.daily[forecastIndex].weather[0].description
+// 		)}, with a high of ${kelvinToFahrenheitRounded(
+// 			data.daily[forecastIndex].temp.max
+// 		)} and a low of ${kelvinToFahrenheitRounded(
+// 			data.daily[forecastIndex].temp.min
+// 		)}</p>`;
+
+// 		forecastList.appendChild(day);
+// 	}
+
+// 	// Write the forecast HTML to the page
+// 	forecastDiv.appendChild(forecastList);
+// 	targetDiv.appendChild(forecastDiv);
+
+// 	writeWeatherWarnings(data);
+// }
+
 // Write forecast HTML
-function writeForecast(targetDiv, data) {
+function writeForecast(targetDiv, nwsData, owmData) {
 	// Clear targetDiv's contents to avoid stacking weather forecast output
 	targetDiv.innerHTML = "";
 
@@ -188,29 +268,21 @@ function writeForecast(targetDiv, data) {
 	const forecastList = document.createElement("ul");
 	forecastDiv.appendChild(forecastList);
 
-	// Add a li for each day of forecast data
+	// Add a li for each period of forecast data
 	for (
 		let forecastIndex = 0;
-		forecastIndex < data.daily.length;
+		forecastIndex < nwsData.properties.periods.length;
 		forecastIndex++
 	) {
+		let dayData = nwsData.properties.periods[forecastIndex];
 		let day = document.createElement("li");
-
 		day.setAttribute("class", "forecast-day");
 
-		day.innerHTML = `${getWeatherImage(
-			data.daily[forecastIndex].weather[0].icon,
-			capitalizeFirstLetter(data.daily[forecastIndex].weather[0].description)
-		)}<p class="forecast-line text-center">${secondsToDayString(
-			data.daily[forecastIndex].dt,
-			forecastIndex
-		)}: ${capitalizeFirstLetter(
-			data.daily[forecastIndex].weather[0].description
-		)}, with a high of ${kelvinToFahrenheitRounded(
-			data.daily[forecastIndex].temp.max
-		)} and a low of ${kelvinToFahrenheitRounded(
-			data.daily[forecastIndex].temp.min
-		)}</p>`;
+		day.innerHTML = `<img class="current-weather-image"
+		src="${dayData.icon}"
+		alt="${dayData.shortForecast} image"/>
+		<p class="text-center">${dayData.name}
+		<p class="forecast-line text-center">${dayData.detailedForecast}</p>`;
 
 		forecastList.appendChild(day);
 	}
@@ -219,7 +291,7 @@ function writeForecast(targetDiv, data) {
 	forecastDiv.appendChild(forecastList);
 	targetDiv.appendChild(forecastDiv);
 
-	writeWeatherWarnings(data);
+	writeWeatherWarnings(owmData);
 }
 
 // Returns a day string based on a given date in seconds.

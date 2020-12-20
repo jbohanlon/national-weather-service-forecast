@@ -12,7 +12,7 @@ async function generateForecast() {
 	);
 
 	const weatherDiv = document.getElementById("weather-data");
-	const forecastData = await getForecastData(lat, lon);
+	const forecastData = await getNWSForecastData(lat, lon);
 	console.log(forecastData);
 
 	writeCurrentWeather(weatherDiv, forecastData.forecastHourlyData);
@@ -21,7 +21,7 @@ async function generateForecast() {
 
 // Takes a latitude/longitude pair and returns an object containing
 // forecast data for the current week by day/night and by hour
-async function getForecastData(lat, lon) {
+async function getNWSForecastData(lat, lon) {
 	const coordinateRequest = await fetch(
 		`https://api.weather.gov/points/${lat},${lon}`
 	);

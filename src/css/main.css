@@ -82,6 +82,22 @@ li {
 	height: 100%;
 }
 
+#windy .progress-bar {
+	/* The styles here fix a Bootstrap 4 conflict with the .progress-bar class */
+	background: none;
+	overflow: visible;
+}
+
+#windy #playpause.clickable.off::before {
+	/* Fix play button: The styles here fix a Bootstrap 4 conflict with global ::before styles class */
+	left: 0.1em !important;
+}
+
+#windy #playpause.clickable::before {
+	/* Fix pause button: The styles here fix a Bootstrap 4 conflict with global ::before styles class */
+	left: 0.025em !important;
+}
+
 /* Weather forecast */
 
 .forecast-container {
@@ -122,4 +138,5 @@ li {
 	font-weight: 600;
 	color: red;
 	margin: 0px;
+	background-color: #9a9a9a;
 }
