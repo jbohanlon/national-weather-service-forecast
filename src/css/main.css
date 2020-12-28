@@ -1,85 +1,8 @@
-/* Global styles */
-
-body {
-	color: peachpuff;
-	background-color: #0f0250;
-	text-shadow: 0.1em 0.1em 0 rgba(0, 0, 0, 0.25);
-	font-size: 16px;
-	/* TODO: Add a full-screen background image to make this prettier */
-}
-
-p {
-	color: #333333;
-}
-
-li {
-	list-style-type: none;
-}
-
-/* Utility classes */
-
-.flex-parent {
-	display: flex;
-}
-
-.flex-child {
-	flex: 1;
-	margin: 1rem;
-}
-
-.capitalize {
-	text-transform: capitalize;
-}
-
-/* User interface */
-
-#weather-button {
-	border: none;
-	margin: 0 auto;
-}
-
-/* Weather data */
-
-#weather-container {
-	align-items: center;
-	justify-content: center;
-	border: none;
-	padding: 0 10px;
-	margin: 0 auto;
-	/* TODO: Add a semi-transparent background to cover the image */
-}
-
-/* TODO: Probably remove */
-#searched-city-results {
-	border: none;
-	padding: 0 10px;
-	margin: 0 auto;
-}
-
-/* Current weather conditions */
-
-.current-weather-image {
-	padding: 20px;
-}
-
-#searched-city-current-conditions {
-	/* TODO: Change this to relative sizing later */
-	height: 500px;
-	margin-bottom: 2rem;
-}
-
-#current-weather-container {
-	background-color: #bbbbff;
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	margin: 20px;
-}
-
 /* Weather map */
 
 #windy {
-	height: 100%;
+	/* Needs the 32px offset to account for the Windy progress-bar div */
+	height: calc(100% - 32px);
 }
 
 #windy .progress-bar {
@@ -96,47 +19,4 @@ li {
 #windy #playpause.clickable::before {
 	/* Fix pause button: The styles here fix a Bootstrap 4 conflict with global ::before styles class */
 	left: 0.025em !important;
-}
-
-/* Weather forecast */
-
-.forecast-container {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-}
-
-.forecast-line {
-	margin: 2rem;
-	padding: 1rem;
-	background-color: white;
-}
-
-.forecast-day {
-	background-color: #bbbbff;
-	margin: 0 auto;
-	border: 5px yellow;
-	border-style: solid;
-}
-
-/* Weather warnings */
-#warnings {
-	margin: 0.5rem 0rem;
-	background-color: #dddddd;
-	font-weight: 900;
-	color: red;
-}
-
-.weather-warning-headline {
-	padding-top: 0.5rem;
-	font-weight: 900;
-	color: red;
-	margin: 0px;
-}
-
-.weather-warning-text {
-	font-weight: 600;
-	color: red;
-	margin: 0px;
-	background-color: #9a9a9a;
 }

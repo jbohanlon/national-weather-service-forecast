@@ -6,6 +6,8 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 async function getWeather() {
+	document.getElementById("weather-output").classList.add("d-none");
+
 	const city =
 		document.getElementById("city-input").value === ""
 			? "New York"
@@ -18,6 +20,7 @@ async function getWeather() {
 	if (lat !== undefined && lon !== undefined) {
 		hideSearchError();
 		getForecast(lat, lon, Config.openWeatherMapKey);
+		document.getElementById("weather-output").classList.remove("d-none");
 	} else {
 		showSearchError(`Couldn't find ${escapeHtml(city)}`);
 	}
@@ -34,11 +37,11 @@ function escapeHtml(str) {
 }
 
 function hideSearchError() {
-	document.getElementById("search-error").classList.add("d-none");
+	document.getElementById("errors").classList.add("d-none");
 }
 
 function showSearchError(errorMessage) {
-	const searchErrorElement = document.getElementById("search-error");
+	const searchErrorElement = document.getElementById("errors");
 
 	searchErrorElement.innerHTML = errorMessage;
 	searchErrorElement.classList.remove("d-none");
@@ -56,9 +59,6 @@ async function getCurrentConditions(city, apiKey) {
 
 	if (currentWeather.status !== 200) {
 		console.log("Error: " + currentWeather.status);
-		document
-			.getElementById("searched-city-current-conditions")
-			.insertAdjacentHTML("beforeend", "<p>Invalid city</p>");
 		return [undefined, undefined];
 	}
 
@@ -68,7 +68,7 @@ async function getCurrentConditions(city, apiKey) {
 	console.log(currentWeatherData);
 
 	writeCurrentConditions(
-		document.getElementById("current-weather-container"),
+		document.getElementById("current-weather"),
 		currentWeatherData
 	);
 
@@ -78,12 +78,6 @@ async function getCurrentConditions(city, apiKey) {
 		currentWeatherData.coord.lon,
 		city
 	);
-
-	// Unhide current-weather-container and windy at the same time so load times don't create inconsistent heights or jumpy content
-	document
-		.getElementById("current-weather-container")
-		.classList.remove("d-none");
-	document.getElementById("windy").classList.remove("d-none");
 
 	return [currentWeatherData.coord.lat, currentWeatherData.coord.lon];
 }
@@ -102,7 +96,7 @@ function writeCurrentConditions(targetDiv, data) {
 	// Add corresponding text data
 	targetDiv.insertAdjacentHTML(
 		"beforeend",
-		`<p class="text-center w-50">Right now in ${
+		`<p>Right now in ${
 			data.name
 		}, it's ${kelvinToFahrenheitRounded(
 			data.main.temp
@@ -133,10 +127,6 @@ function createMap(targetDiv, latitude, longitude, placeName) {
 	// Clear targetDiv's contents to avoid stacking maps
 	targetDiv.innerHTML = "";
 
-	// Set map's height to equal its container.
-	// Leaflet maps must have a defined height so this is here to guarantee that.
-	document.getElementById("windy").setAttribute("height", "100%");
-
 	// Parameters to pass to Windy -- it's most efficient to pass as many as possible at the beginning
 	const options = {
 		key: Config.windyKey,
@@ -157,24 +147,6 @@ function createMap(targetDiv, latitude, longitude, placeName) {
 	});
 }
 
-// // Return 5-day forecast data for given latitude and longitude coordinates.
-// // Also includes weather alerts for the given area if applicable.
-// async function getForecast(lat, lon, apiKey) {
-// 	const forecast = await fetch(
-// 		`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${apiKey}`
-// 	);
-
-// 	// console.log(forecast);
-
-// 	const forecastData = await forecast.json();
-// 	console.log(forecastData);
-
-// 	writeForecast(
-// 		document.getElementById("searched-city-forecast"),
-// 		forecastData
-// 	);
-// }
-
 // Return 5-day forecast data for given latitude and longitude coordinates.
 // Also includes weather alerts for the given area if applicable.
 async function getForecast(lat, lon, apiKey) {
@@ -190,7 +162,7 @@ async function getForecast(lat, lon, apiKey) {
 	console.log(nwsForecastData);
 
 	writeForecast(
-		document.getElementById("searched-city-forecast"),
+		document.getElementById("multi-day-forecast"),
 		nwsForecastData,
 		owmForecastData
 	);
@@ -208,53 +180,6 @@ async function getNWSForecastData(lat, lon) {
 	return responseData;
 }
 
-// // Write forecast HTML
-// function writeForecast(targetDiv, data) {
-// 	// Clear targetDiv's contents to avoid stacking weather forecast output
-// 	targetDiv.innerHTML = "";
-
-// 	// Add a new div that holds the requested location's forecast data
-// 	const forecastDiv = document.createElement("div");
-// 	forecastDiv.setAttribute("class", "forecast-container");
-
-// 	// Create a list to hold each day's forecast data and corresponding images
-// 	const forecastList = document.createElement("ul");
-// 	forecastDiv.appendChild(forecastList);
-
-// 	// Add a li for each day of forecast data
-// 	for (
-// 		let forecastIndex = 0;
-// 		forecastIndex < data.daily.length;
-// 		forecastIndex++
-// 	) {
-// 		let day = document.createElement("li");
-
-// 		day.setAttribute("class", "forecast-day");
-
-// 		day.innerHTML = `${getWeatherImage(
-// 			data.daily[forecastIndex].weather[0].icon,
-// 			capitalizeFirstLetter(data.daily[forecastIndex].weather[0].description)
-// 		)}<p class="forecast-line text-center">${secondsToDayString(
-// 			data.daily[forecastIndex].dt,
-// 			forecastIndex
-// 		)}: ${capitalizeFirstLetter(
-// 			data.daily[forecastIndex].weather[0].description
-// 		)}, with a high of ${kelvinToFahrenheitRounded(
-// 			data.daily[forecastIndex].temp.max
-// 		)} and a low of ${kelvinToFahrenheitRounded(
-// 			data.daily[forecastIndex].temp.min
-// 		)}</p>`;
-
-// 		forecastList.appendChild(day);
-// 	}
-
-// 	// Write the forecast HTML to the page
-// 	forecastDiv.appendChild(forecastList);
-// 	targetDiv.appendChild(forecastDiv);
-
-// 	writeWeatherWarnings(data);
-// }
-
 // Write forecast HTML
 function writeForecast(targetDiv, nwsData, owmData) {
 	// Clear targetDiv's contents to avoid stacking weather forecast output
@@ -266,6 +191,7 @@ function writeForecast(targetDiv, nwsData, owmData) {
 
 	// Create a list to hold each day's forecast data and corresponding images
 	const forecastList = document.createElement("ul");
+	forecastList.classList.add("list-unstyled");
 	forecastDiv.appendChild(forecastList);
 
 	// Add a li for each period of forecast data
@@ -334,49 +260,40 @@ function capitalizeWords(str) {
 // Write weather warnings, or hide the containing element if none exist
 function writeWeatherWarnings(data) {
 	// Reset existing warning data
-	const warnings = document.getElementById("warnings");
-	warnings.innerHTML = "<h2>Weather Warnings</h2>";
+	const weatherWarnings = document.getElementById("weather-warnings");
+	weatherWarnings.innerHTML = "<h2>Weather Warnings</h2>";
+
+	// TODO: Add show/hide button for warnings since they can take
+	// up a lot of vertical space at the top of the screen.
 
 	// Write each weather alert
 	if (data.hasOwnProperty("alerts")) {
-		// Unhide warnings
-		warnings.classList.remove("d-none");
-
 		for (let i = 0; i < data.alerts.length; i++) {
-			warnings.insertAdjacentHTML(
+			weatherWarnings.insertAdjacentHTML(
 				"beforeend",
-				`<div>${formatWeatherWarning(data.alerts[i].description)}</div>`
+				`${formatWeatherWarning(data.alerts[i].description)}`
 			);
 		}
+		// Unhide warnings
+		weatherWarnings.classList.remove("d-none");
 	} else {
 		// Hide warnings
-		warnings.classList.add("d-none");
+		weatherWarnings.classList.add("d-none");
 	}
 }
 
 // Return weather warning with line breaks and nicer formatting
 function formatWeatherWarning(text) {
-	const split = text.split("*");
-	const warnings = [];
+	const lines = text.split("*");
+	const headline = lines[0];
+	const details = lines.slice(1);
 
-	for (let i = 0; i < split.length; i++) {
-		let sentence = split[i];
-
-		// Format warning headline and text
-		if (i == 0) {
-			sentence = sentence.replace(/\.\.\./g, "");
-			warnings.push(
-				`<p class="weather-warning-headline">${sentence.trim()}</p>`
-			);
-		} else {
-			sentence = sentence.replace("...", " &mdash; ");
-			warnings.push(
-				`<p class="weather-warning-text">&bull;${sentence.trim()}</p>`
-			);
-		}
-	}
-
-	return warnings.join("");
+	return `
+		<div class="alert alert-warning" role="alert">
+			<p><strong>${headline}</strong></p>
+			${details.length === 0 ? "" : "<ul><li>" + details.join("</li><li>") + "</li></ul>"}
+		</div>
+	`;
 }
 
 // TODO: See if you can get historical data through the NWS API
