@@ -3,6 +3,18 @@ window.addEventListener("DOMContentLoaded", () => {
 		e.preventDefault();
 		getWeather();
 	});
+
+	$(document).ready(function () {
+		$("#weather-warnings").on("hide.bs.collapse", function () {
+			$("#toggle-warnings-button").text("Show weather warnings");
+		});
+	});
+
+	$(document).ready(function () {
+		$("#weather-warnings").on("show.bs.collapse", function () {
+			$("#toggle-warnings-button").text("Hide weather warnings");
+		});
+	});
 });
 
 async function getWeather() {
@@ -96,9 +108,7 @@ function writeCurrentConditions(targetDiv, data) {
 	// Add corresponding text data
 	targetDiv.insertAdjacentHTML(
 		"beforeend",
-		`<p>Right now in ${
-			data.name
-		}, it's ${kelvinToFahrenheitRounded(
+		`<p>Right now in ${data.name}, it's ${kelvinToFahrenheitRounded(
 			data.main.temp
 		)} and feels like ${kelvinToFahrenheitRounded(data.main.feels_like)}</p>`
 	);
@@ -262,9 +272,9 @@ function writeWeatherWarnings(data) {
 	// Reset existing warning data
 	const weatherWarnings = document.getElementById("weather-warnings");
 	weatherWarnings.innerHTML = "<h2>Weather Warnings</h2>";
-
-	// TODO: Add show/hide button for warnings since they can take
-	// up a lot of vertical space at the top of the screen.
+	const weatherWarningsContainer = document.getElementById(
+		"weather-warnings-container"
+	);
 
 	// Write each weather alert
 	if (data.hasOwnProperty("alerts")) {
@@ -274,11 +284,11 @@ function writeWeatherWarnings(data) {
 				`${formatWeatherWarning(data.alerts[i].description)}`
 			);
 		}
-		// Unhide warnings
-		weatherWarnings.classList.remove("d-none");
+		// Unhide weather-warnings
+		weatherWarningsContainer.classList.remove("d-none");
 	} else {
-		// Hide warnings
-		weatherWarnings.classList.add("d-none");
+		// Hide weather-warnings
+		weatherWarningsContainer.classList.add("d-none");
 	}
 }
 
@@ -291,7 +301,11 @@ function formatWeatherWarning(text) {
 	return `
 		<div class="alert alert-warning" role="alert">
 			<p><strong>${headline}</strong></p>
-			${details.length === 0 ? "" : "<ul><li>" + details.join("</li><li>") + "</li></ul>"}
+			${
+				details.length === 0
+					? ""
+					: "<ul><li>" + details.join("</li><li>") + "</li></ul>"
+			}
 		</div>
 	`;
 }
