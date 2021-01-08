@@ -195,37 +195,30 @@ function writeForecast(targetDiv, nwsData, owmData) {
 	// Clear targetDiv's contents to avoid stacking weather forecast output
 	targetDiv.innerHTML = "";
 
-	// Add a new div that holds the requested location's forecast data
-	const forecastDiv = document.createElement("div");
-	forecastDiv.setAttribute("class", "forecast-container");
-
-	// Create a list to hold each day's forecast data and corresponding images
-	const forecastList = document.createElement("ul");
-	forecastList.classList.add("list-unstyled");
-	forecastDiv.appendChild(forecastList);
-
-	// Add a li for each period of forecast data
+	// Add a card for each period of forecast data
 	for (
 		let forecastIndex = 0;
 		forecastIndex < nwsData.properties.periods.length;
 		forecastIndex++
 	) {
-		let dayData = nwsData.properties.periods[forecastIndex];
-		let day = document.createElement("li");
-		day.setAttribute("class", "forecast-day");
+		let timePeriodData = nwsData.properties.periods[forecastIndex];
+		let timePeriodCard = document.createElement("div");
+		timePeriodCard.classList.add("card");
+		timePeriodCard.classList.add("col-lg-4");
+		timePeriodCard.classList.add("col-md-6");
+		//timePeriodCard.style.minWidth = "300px";
+		timePeriodCard.style.marginBottom = "10px";
 
-		day.innerHTML = `<img class="current-weather-image"
-		src="${dayData.icon}"
-		alt="${dayData.shortForecast} image"/>
-		<p class="text-center">${dayData.name}
-		<p class="forecast-line text-center">${dayData.detailedForecast}</p>`;
+		timePeriodCard.innerHTML = `<img	src="${timePeriodData.icon}"
+		class="card-img-top"
+		alt="${timePeriodData.shortForecast} image"/>
+		<div class="card-body">
+			<h5 class="card-title">${timePeriodData.name}</h5>
+			<p class="card-text">${timePeriodData.detailedForecast}</p>
+		</div>`;
 
-		forecastList.appendChild(day);
+		targetDiv.appendChild(timePeriodCard);
 	}
-
-	// Write the forecast HTML to the page
-	forecastDiv.appendChild(forecastList);
-	targetDiv.appendChild(forecastDiv);
 
 	writeWeatherWarnings(owmData);
 }
