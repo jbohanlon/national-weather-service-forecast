@@ -1,5 +1,3 @@
-/* Weather map */
-
 #windy {
 	/* Needs the 32px offset to account for the Windy progress-bar div */
 	height: calc(100% - 32px);

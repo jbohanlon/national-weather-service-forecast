@@ -1,21 +1,59 @@
 window.addEventListener("DOMContentLoaded", () => {
+	// Setup location form submit handler
 	document.getElementById("weather-form").addEventListener("submit", (e) => {
 		e.preventDefault();
 		getWeather();
 	});
 
-	$(document).ready(function () {
-		$("#weather-warnings").on("hide.bs.collapse", function () {
+	// Set up show/hide listeners for collapse events for the #weather-warnings element,
+	// to change show/hide button text.
+	$("#weather-warnings")
+		.on("hide.bs.collapse", function () {
 			$("#toggle-warnings-button").text("Show weather warnings");
-		});
-	});
-
-	$(document).ready(function () {
-		$("#weather-warnings").on("show.bs.collapse", function () {
+		})
+		.on("show.bs.collapse", function () {
 			$("#toggle-warnings-button").text("Hide weather warnings");
 		});
-	});
+
+	getUserLocationWeather();
 });
+
+// Get the user's current position from the browser geolocation API and immediately render weather if allowed
+function getUserLocationWeather() {
+	navigator.geolocation.getCurrentPosition(
+		// Success
+		(geolocationPosition) => {
+			getCurrentConditionsFromLatLon(
+				geolocationPosition.coords.latitude,
+				geolocationPosition.coords.longitude,
+				Config.openWeatherMapKey
+			);
+
+			hideSearchError();
+			writeWeatherWarnings(
+				geolocationPosition.coords.latitude,
+				geolocationPosition.coords.longitude,
+				Config.openWeatherMapKey
+			);
+
+			renderForecast(
+				document.getElementById("multi-day-forecast"),
+				geolocationPosition.coords.latitude,
+				geolocationPosition.coords.longitude
+			);
+
+			// Show weather output element
+			document.getElementById("weather-output").classList.remove("d-none");
+		},
+		// Failure
+		(geolocationPositionError) => {
+			console.error(geolocationPositionError);
+			showSearchError(
+				`Please allow your location to be detected or enter a city.`
+			);
+		}
+	);
+}
 
 async function getWeather() {
 	document.getElementById("weather-output").classList.add("d-none");
@@ -25,13 +63,21 @@ async function getWeather() {
 			? "New York"
 			: document.getElementById("city-input").value;
 
-	const [lat, lon] = await getCurrentConditions(city, Config.openWeatherMapKey);
+	// Get the specified location's current weather and return the lat/lon corresponding to that location
+	const [lat, lon] = await getCurrentConditionsFromCity(
+		city,
+		Config.openWeatherMapKey
+	);
 	console.log(lat, lon);
 
+	// Pass lat+lon data from OpenWeatherMap to the National Weather Service
 	// Don't try to get a forecast if you encountered error lat lon values
 	if (lat !== undefined && lon !== undefined) {
 		hideSearchError();
-		getForecast(lat, lon, Config.openWeatherMapKey);
+		writeWeatherWarnings(lat, lon, Config.openWeatherMapKey);
+		renderForecast(document.getElementById("multi-day-forecast"), lat, lon);
+
+		// Show weather output element
 		document.getElementById("weather-output").classList.remove("d-none");
 	} else {
 		showSearchError(`Couldn't find ${escapeHtml(city)}`);
@@ -59,10 +105,16 @@ function showSearchError(errorMessage) {
 	searchErrorElement.classList.remove("d-none");
 }
 
-// Fetch current weather conditions and add corresponding HTML elements to the page.
+// function getUserLocation() {
+// 	return new Promise((resolve, reject) => {
+// 		navigator.geolocation.getCurrentPosition(resolve, reject);
+// 	});
+// }
+
+// Fetch current weather conditions and add corresponding HTML elements to the page based on a specified city.
 // Returns latitude and longitude associated with a location to avoid an additional
 // geolocation lookup request.
-async function getCurrentConditions(city, apiKey) {
+async function getCurrentConditionsFromCity(city, apiKey) {
 	const currentWeather = await fetch(
 		`https:\\api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
 			city
@@ -94,6 +146,33 @@ async function getCurrentConditions(city, apiKey) {
 	return [currentWeatherData.coord.lat, currentWeatherData.coord.lon];
 }
 
+// Fetch current weather conditions and add corresponding HTML elements to the page based on a lat/lon pair.
+// The lat/lon pair comes from a user's geolocation data so no return values are necessary.
+async function getCurrentConditionsFromLatLon(lat, lon, apiKey) {
+	const currentWeather = await fetch(
+		`https:\\api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}`
+	);
+
+	if (currentWeather.status !== 200) {
+		console.log("Error: " + currentWeather.status);
+	}
+
+	const currentWeatherData = await currentWeather.json();
+	console.log(currentWeatherData);
+
+	writeCurrentConditions(
+		document.getElementById("current-weather"),
+		currentWeatherData
+	);
+
+	createMap(
+		document.getElementById("windy"),
+		currentWeatherData.coord.lat,
+		currentWeatherData.coord.lon,
+		"Your location"
+	);
+}
+
 // Write current conditions to HTML
 function writeCurrentConditions(targetDiv, data) {
 	// Clear targetDiv's contents to avoid stacking weather data output
@@ -121,7 +200,6 @@ function kelvinToFahrenheitRounded(temp) {
 
 // Return an image corresponding to given weather conditions
 function getWeatherImage(icon, description) {
-	// TODO: Replace OWM images with better ones
 	// Weather images from OWM: https://openweathermap.org/weather-conditions#Icon-list
 
 	const imageUrlBeginning = "https://openweathermap.org/img/wn/";
@@ -157,41 +235,24 @@ function createMap(targetDiv, latitude, longitude, placeName) {
 	});
 }
 
-// Return 5-day forecast data for given latitude and longitude coordinates.
-// Also includes weather alerts for the given area if applicable.
-async function getForecast(lat, lon, apiKey) {
-	const owmForecast = await fetch(
-		`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${apiKey}`
-	);
-
-	const owmForecastData = await owmForecast.json();
-	console.log(owmForecastData);
-
-	const nwsForecastData = await getNWSForecastData(lat, lon);
-
-	console.log(nwsForecastData);
-
-	writeForecast(
-		document.getElementById("multi-day-forecast"),
-		nwsForecastData,
-		owmForecastData
-	);
-}
-
-// Takes a latitude/longitude pair and returns forecast data for the current week
+// Returns 7-day forecast data for given latitude and longitude coordinates
 async function getNWSForecastData(lat, lon) {
 	const coordinateRequest = await fetch(
 		`https://api.weather.gov/points/${lat},${lon}`
 	);
 	const coordinateData = await coordinateRequest.json();
 
-	const response = await fetch(coordinateData.properties.forecast);
-	const responseData = await response.json();
-	return responseData;
+	const nwsResponse = await fetch(coordinateData.properties.forecast);
+	const nwsForecastData = await nwsResponse.json();
+	// console.log(nwsForecastData);
+
+	return nwsForecastData;
 }
 
-// Write forecast HTML
-function writeForecast(targetDiv, nwsData, owmData) {
+// Renders a 7-day forecast in a specified element for given latitude and longitude coordinates
+async function renderForecast(targetDiv, lat, lon) {
+	const nwsData = await getNWSForecastData(lat, lon);
+
 	// Clear targetDiv's contents to avoid stacking weather forecast output
 	targetDiv.innerHTML = "";
 
@@ -219,8 +280,6 @@ function writeForecast(targetDiv, nwsData, owmData) {
 
 		targetDiv.appendChild(timePeriodCard);
 	}
-
-	writeWeatherWarnings(owmData);
 }
 
 // Returns a day string based on a given date in seconds.
@@ -250,18 +309,29 @@ function capitalizeFirstLetter(str) {
 
 // Return a string with the first letter of each word capitalized
 function capitalizeWords(str) {
-	const split = str.split(" ");
-	const capitalized = [];
+	if (str.length === 0) {
+		return "Your Location";
+	} else {
+		const split = str.split(" ");
+		const capitalized = [];
 
-	for (const word of split) {
-		capitalized.push(capitalizeFirstLetter(word));
+		for (const word of split) {
+			capitalized.push(capitalizeFirstLetter(word));
+		}
+
+		return capitalized.join(" ");
 	}
-
-	return capitalized.join(" ");
 }
 
 // Write weather warnings, or hide the containing element if none exist
-function writeWeatherWarnings(data) {
+async function writeWeatherWarnings(lat, lon, apiKey) {
+	// Get weather warnings data from OpenWeatherMap
+	const owmCurrentConditions = await fetch(
+		`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${apiKey}`
+	);
+
+	const owmCurrentConditionsData = await owmCurrentConditions.json();
+
 	// Reset existing warning data
 	const weatherWarnings = document.getElementById("weather-warnings");
 	weatherWarnings.innerHTML = "<h2>Weather Warnings</h2>";
@@ -270,11 +340,13 @@ function writeWeatherWarnings(data) {
 	);
 
 	// Write each weather alert
-	if (data.hasOwnProperty("alerts")) {
-		for (let i = 0; i < data.alerts.length; i++) {
+	if (owmCurrentConditionsData.hasOwnProperty("alerts")) {
+		for (let i = 0; i < owmCurrentConditionsData.alerts.length; i++) {
 			weatherWarnings.insertAdjacentHTML(
 				"beforeend",
-				`${formatWeatherWarning(data.alerts[i].description)}`
+				`${formatWeatherWarning(
+					owmCurrentConditionsData.alerts[i].description
+				)}`
 			);
 		}
 		// Unhide weather-warnings
@@ -301,11 +373,4 @@ function formatWeatherWarning(text) {
 			}
 		</div>
 	`;
-}
-
-// TODO: See if you can get historical data through the NWS API
-
-function getWeatherBackground(weather) {
-	// TODO: Use some free images from Flickr (check usage rights!) to get cool weather-related backgrounds
-	// Flickr API: https://www.flickr.com/services/api/
 }
