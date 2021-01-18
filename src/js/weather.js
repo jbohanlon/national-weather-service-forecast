@@ -49,7 +49,7 @@ function getUserLocationWeather() {
 		(geolocationPositionError) => {
 			console.error(geolocationPositionError);
 			showSearchError(
-				`Please allow your location to be detected or enter a city.`
+				`Please allow your location to be detected or enter a city`
 			);
 		}
 	);
@@ -58,10 +58,12 @@ function getUserLocationWeather() {
 async function getWeather() {
 	document.getElementById("weather-output").classList.add("d-none");
 
-	const city =
-		document.getElementById("city-input").value === ""
-			? "New York"
-			: document.getElementById("city-input").value;
+	const city = document.getElementById("city-input").value;
+
+	if (city === "") {
+		showSearchError(`Please enter a city`);
+		return;
+	}
 
 	// Get the specified location's current weather and return the lat/lon corresponding to that location
 	const [lat, lon] = await getCurrentConditionsFromCity(
@@ -104,12 +106,6 @@ function showSearchError(errorMessage) {
 	searchErrorElement.innerHTML = errorMessage;
 	searchErrorElement.classList.remove("d-none");
 }
-
-// function getUserLocation() {
-// 	return new Promise((resolve, reject) => {
-// 		navigator.geolocation.getCurrentPosition(resolve, reject);
-// 	});
-// }
 
 // Fetch current weather conditions and add corresponding HTML elements to the page based on a specified city.
 // Returns latitude and longitude associated with a location to avoid an additional
@@ -264,18 +260,24 @@ async function renderForecast(targetDiv, lat, lon) {
 	) {
 		let timePeriodData = nwsData.properties.periods[forecastIndex];
 		let timePeriodCard = document.createElement("div");
-		timePeriodCard.classList.add("card");
 		timePeriodCard.classList.add("col-lg-4");
 		timePeriodCard.classList.add("col-md-6");
-		//timePeriodCard.style.minWidth = "300px";
-		timePeriodCard.style.marginBottom = "10px";
+		timePeriodCard.classList.add("mb-3");
 
-		timePeriodCard.innerHTML = `<img	src="${timePeriodData.icon}"
-		class="card-img-top"
-		alt="${timePeriodData.shortForecast} image"/>
-		<div class="card-body">
-			<h5 class="card-title">${timePeriodData.name}</h5>
-			<p class="card-text">${timePeriodData.detailedForecast}</p>
+		if (forecastIndex === nwsData.properties.periods.length - 2) {
+			// Second-to-last forecast card
+			timePeriodCard.classList.add("ml-lg-auto");
+		} else if (forecastIndex === nwsData.properties.periods.length - 1) {
+			// Last forecast card
+			timePeriodCard.classList.add("mr-lg-auto");
+		}
+
+		timePeriodCard.innerHTML = `<div class="card h-100">
+			<img src="${timePeriodData.icon}" class="card-img-top" alt="${timePeriodData.shortForecast} image" />
+			<div class="card-body">
+				<h5 class="card-title">${timePeriodData.name}</h5>
+				<p class="card-text">${timePeriodData.detailedForecast}</p>
+			</div>
 		</div>`;
 
 		targetDiv.appendChild(timePeriodCard);
